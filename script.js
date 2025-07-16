@@ -21,11 +21,24 @@ const messageEl = document.getElementById('message');
 const bankEl = document.getElementById('bank');
 const runningCountEl = document.getElementById('running-count');
 const trueCountEl = document.getElementById('true-count');
-const playerScoreEl = document.getElementById('player-score');
-const dealerScoreEl = document.getElementById('dealer-score');
 const currentBetEl = document.getElementById('current-bet');
 const setBankButton = document.getElementById('set-bank');
 const recommendedBetEl = document.getElementById('recommended-bet');
+const restartButton = document.getElementById('restart');
+
+restartButton.addEventListener('click', () => {
+    bank = 500;
+    deck = buildDeck();
+    shuffle(deck);
+    runningCount = 0;
+    playerHands = [];
+    dealerHand = [];
+    currentBet = 0;
+    currentHandIndex = 0;
+    gameState = 'betting';
+    messageEl.innerText = '';
+    updateUI();
+});
 
 setBankButton.addEventListener('click', () => {
     const newBank = parseInt(document.getElementById('bank-amount').value);
@@ -154,18 +167,6 @@ function updateUI() {
     doubleButton.disabled = gameState !== 'playing' || playerHands[currentHandIndex].hand.length !== 2 || bank < playerHands[currentHandIndex].bet;
     splitButton.disabled = gameState !== 'playing' || playerHands[currentHandIndex].hand.length !== 2 || playerHands[currentHandIndex].hand[0].rank !== playerHands[currentHandIndex].hand[1].rank || bank < playerHands[currentHandIndex].bet;
 
-    if (playerHands.length > 0) {
-        playerScoreEl.innerText = calculateHandValue(playerHands[currentHandIndex].hand);
-    } else {
-        playerScoreEl.innerText = '';
-    }
-
-    if (gameState === 'playing') {
-        dealerScoreEl.innerText = getCardValue(dealerHand[0]);
-    } else {
-        dealerScoreEl.innerText = calculateHandValue(dealerHand);
-    }
-
     if (gameState === 'betting') {
         recommendedBetEl.innerText = `Recommended Bet: $${getRecommendedBet()}`;
     } else {
@@ -184,7 +185,7 @@ function getRecommendedBet() {
     return recommended;
 }
 
-function deal() {
+async function deal() {
     messageEl.innerText = '';
     currentBet = parseInt(document.getElementById('bet-amount').value);
     if (isNaN(currentBet) || currentBet <= 0 || currentBet > bank) {
@@ -212,13 +213,22 @@ function deal() {
     updateUI();
 }
 
-function hit() {
-    drawCard(playerHands[currentHandIndex].hand);
-    const value = calculateHandValue(playerHands[currentHandIndex].hand);
+async function hit() {
+    const hand = playerHands[currentHandIndex].hand;
+    const card = drawCard(hand, false);
+    const playerCardsEl = document.getElementById('player-cards');
+    const cardEl = createCardElement(card);
+    cardEl.style.opacity = 0;
+    cardEl.style.transition = 'opacity 0.5s';
+    playerCardsEl.appendChild(cardEl);
+    setTimeout(() => { cardEl.style.opacity = 1; }, 10);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    updateCount(card);
+    const value = calculateHandValue(hand);
     updateUI();
     if (value > 21) {
         playerHands[currentHandIndex].done = true;
-        nextHand();
+        await nextHand();
     }
 }
 
@@ -227,19 +237,27 @@ function stand() {
     nextHand();
 }
 
-function doubleDown() {
+async function doubleDown() {
     const hand = playerHands[currentHandIndex];
     if (bank < hand.bet) return;
     bank -= hand.bet;
     hand.bet *= 2;
-    drawCard(hand.hand);
+    const card = drawCard(hand.hand, false);
+    const playerCardsEl = document.getElementById('player-cards');
+    const cardEl = createCardElement(card);
+    cardEl.style.opacity = 0;
+    cardEl.style.transition = 'opacity 0.5s';
+    playerCardsEl.appendChild(cardEl);
+    setTimeout(() => { cardEl.style.opacity = 1; }, 10);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    updateCount(card);
     const value = calculateHandValue(hand.hand);
     updateUI();
     hand.done = true;
     if (value <= 21) {
-        nextHand();
+        await nextHand();
     } else {
-        nextHand();
+        await nextHand();
     }
 }
 
@@ -254,7 +272,7 @@ function split() {
     updateUI();
 }
 
-function nextHand() {
+async function nextHand() {
     while (currentHandIndex < playerHands.length - 1 && playerHands[currentHandIndex].done) {
         currentHandIndex++;
     }
@@ -265,13 +283,34 @@ function nextHand() {
 
     // Dealer turn
     gameState = 'dealerTurn';
-    updateCount(dealerHand[1]); // Reveal hole card
+    renderHands(); // Ensure current state with hidden hole
+    const dealerCardsEl = document.getElementById('dealer-cards');
+    const hiddenEl = dealerCardsEl.children[1];
+    const holeCard = dealerHand[1];
+    const realEl = createCardElement(holeCard);
+    realEl.style.opacity = 0;
+    realEl.style.transition = 'opacity 0.5s';
+    dealerCardsEl.replaceChild(realEl, hiddenEl);
+    setTimeout(() => { realEl.style.opacity = 1; }, 10);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    updateCount(holeCard);
+    updateUI();
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     let dealerValue = calculateHandValue(dealerHand);
     while (dealerValue < 17) {
-        drawCard(dealerHand);
+        const card = drawCard(dealerHand, false);
+        const cardEl = createCardElement(card);
+        cardEl.style.opacity = 0;
+        cardEl.style.transition = 'opacity 0.5s';
+        dealerCardsEl.appendChild(cardEl);
+        setTimeout(() => { cardEl.style.opacity = 1; }, 10);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        updateCount(card);
         dealerValue = calculateHandValue(dealerHand);
+        updateUI();
+        await new Promise(resolve => setTimeout(resolve, 500));
     }
-    updateUI();
 
     // Evaluate results
     gameState = 'ended';

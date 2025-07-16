@@ -121,6 +121,10 @@ button:disabled {
     left: 50%;
     transform: translateX(-50%);
     font-size: 20px;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
 }
 
 #bet-section {
