@@ -280,6 +280,9 @@ function updateUI() {
     } else {
         recommendedBetEl.innerText = '';
     }
+    
+    // Update basic strategy tooltips
+    updateBasicStrategyTooltips();
 }
 
 function getRecommendedBet() {
@@ -316,6 +319,119 @@ function getRecommendedBet() {
     if (recommended > bank) recommended = bank;
     
     return recommended;
+}
+
+function getBasicStrategyAction(playerHand, dealerUpCard) {
+    const playerValue = calculateHandValue(playerHand);
+    const dealerValue = getCardValue(dealerUpCard);
+    const isPlayerSoft = playerHand.some(card => card.rank === 'A') && playerValue <= 21 && playerHand.reduce((sum, card) => sum + (card.rank === 'A' ? 1 : getCardValue(card)), 0) + 10 === playerValue;
+    const isPair = playerHand.length === 2 && playerHand[0].rank === playerHand[1].rank;
+    
+    // Pair splitting strategy
+    if (isPair && playerHand.length === 2) {
+        const pairRank = playerHand[0].rank;
+        switch (pairRank) {
+            case 'A':
+            case '8':
+                return 'SPLIT';
+            case '2':
+            case '3':
+            case '7':
+                return (dealerValue >= 2 && dealerValue <= 7) ? 'SPLIT' : 'HIT';
+            case '4':
+                return (dealerValue === 5 || dealerValue === 6) ? 'SPLIT' : 'HIT';
+            case '5':
+                return (dealerValue >= 2 && dealerValue <= 9) ? 'DOUBLE' : 'HIT';
+            case '6':
+                return (dealerValue >= 2 && dealerValue <= 6) ? 'SPLIT' : 'HIT';
+            case '9':
+                return (dealerValue >= 2 && dealerValue <= 9 && dealerValue !== 7) ? 'SPLIT' : 'STAND';
+            case '10':
+            case 'J':
+            case 'Q':
+            case 'K':
+                return 'STAND';
+        }
+    }
+    
+    // Soft hands (Ace counted as 11)
+    if (isPlayerSoft) {
+        if (playerValue >= 19) return 'STAND';
+        if (playerValue === 18) {
+            if (dealerValue >= 2 && dealerValue <= 6) return playerHand.length === 2 ? 'DOUBLE' : 'STAND';
+            if (dealerValue === 7 || dealerValue === 8) return 'STAND';
+            return 'HIT';
+        }
+        if (playerValue === 17) {
+            return (dealerValue >= 3 && dealerValue <= 6 && playerHand.length === 2) ? 'DOUBLE' : 'HIT';
+        }
+        if (playerValue >= 15 && playerValue <= 16) {
+            return (dealerValue >= 4 && dealerValue <= 6 && playerHand.length === 2) ? 'DOUBLE' : 'HIT';
+        }
+        if (playerValue >= 13 && playerValue <= 14) {
+            return (dealerValue >= 5 && dealerValue <= 6 && playerHand.length === 2) ? 'DOUBLE' : 'HIT';
+        }
+        return 'HIT';
+    }
+    
+    // Hard hands
+    if (playerValue >= 17) return 'STAND';
+    if (playerValue >= 13 && playerValue <= 16) {
+        return (dealerValue >= 2 && dealerValue <= 6) ? 'STAND' : 'HIT';
+    }
+    if (playerValue === 12) {
+        return (dealerValue >= 4 && dealerValue <= 6) ? 'STAND' : 'HIT';
+    }
+    if (playerValue === 11) {
+        return playerHand.length === 2 ? 'DOUBLE' : 'HIT';
+    }
+    if (playerValue === 10) {
+        return (dealerValue >= 2 && dealerValue <= 9 && playerHand.length === 2) ? 'DOUBLE' : 'HIT';
+    }
+    if (playerValue === 9) {
+        return (dealerValue >= 3 && dealerValue <= 6 && playerHand.length === 2) ? 'DOUBLE' : 'HIT';
+    }
+    
+    return 'HIT';
+}
+
+function updateBasicStrategyTooltips() {
+    if (gameState !== 'playing' || playerHands.length === 0 || dealerHand.length === 0) {
+        // Clear strategy classes
+        hitButton.className = hitButton.className.replace(/strategy-\w+/g, '').trim();
+        standButton.className = standButton.className.replace(/strategy-\w+/g, '').trim();
+        doubleButton.className = doubleButton.className.replace(/strategy-\w+/g, '').trim();
+        splitButton.className = splitButton.className.replace(/strategy-\w+/g, '').trim();
+        return;
+    }
+    
+    const currentHand = playerHands[currentHandIndex].hand;
+    const dealerUpCard = dealerHand[0];
+    const recommendedAction = getBasicStrategyAction(currentHand, dealerUpCard);
+    
+    // Clear all strategy classes first
+    [hitButton, standButton, doubleButton, splitButton].forEach(button => {
+        button.className = button.className.replace(/strategy-\w+/g, '').trim();
+    });
+    
+    // Add strategy classes based on recommendation
+    const buttons = {
+        'HIT': hitButton,
+        'STAND': standButton,
+        'DOUBLE': doubleButton,
+        'SPLIT': splitButton
+    };
+    
+    Object.keys(buttons).forEach(action => {
+        const button = buttons[action];
+        if (action === recommendedAction) {
+            button.classList.add('strategy-recommended');
+        } else if (!button.disabled) {
+            button.classList.add('strategy-not-recommended');
+        } else {
+            button.classList.add('strategy-neutral');
+        }
+    });
 }
 
 async function deal() {
