@@ -12,7 +12,7 @@ let playerHands = [];
 let currentHandIndex = 0;
 let dealerHand = [];
 let runningCount = 0;
-let bank = 500;
+let bank = 10000; // Updated default
 let currentBet = 0;
 let gameState = 'betting'; // betting, playing, dealerTurn, ended
 
@@ -26,13 +26,38 @@ const bankEl = document.getElementById('bank');
 const runningCountEl = document.getElementById('running-count');
 const trueCountEl = document.getElementById('true-count');
 const currentBetEl = document.getElementById('current-bet');
-const setBankButton = document.getElementById('set-bank');
 const recommendedBetEl = document.getElementById('recommended-bet');
 const restartButton = document.getElementById('restart');
-const setDecksButton = document.getElementById('set-decks');
 
-restartButton.addEventListener('click', () => {
-    bank = 500;
+// Welcome overlay elements
+const welcomeOverlay = document.getElementById('welcome-overlay');
+const startGameButton = document.getElementById('start-game');
+const welcomeBankInput = document.getElementById('welcome-bank');
+const welcomeDecksInput = document.getElementById('welcome-decks');
+
+// Welcome overlay event handlers
+startGameButton.addEventListener('click', startNewGame);
+
+function startNewGame() {
+    // Get settings from welcome screen
+    const newBank = parseInt(welcomeBankInput.value);
+    const newDecks = parseInt(welcomeDecksInput.value);
+    
+    if (isNaN(newBank) || newBank < 100) {
+        alert('Please enter a valid bank amount (minimum $100)');
+        return;
+    }
+    
+    if (isNaN(newDecks) || newDecks < 1 || newDecks > 8) {
+        alert('Please enter a valid number of decks (1-8)');
+        return;
+    }
+    
+    // Apply settings
+    bank = newBank;
+    numDecks = newDecks;
+    
+    // Reset game state
     deck = buildDeck();
     shuffle(deck);
     runningCount = 0;
@@ -42,31 +67,34 @@ restartButton.addEventListener('click', () => {
     currentHandIndex = 0;
     gameState = 'betting';
     messageEl.innerText = '';
+    
+    // Hide overlay and start game
+    welcomeOverlay.classList.add('hidden');
     updateUI();
-});
+}
 
-setBankButton.addEventListener('click', () => {
-    const newBank = parseInt(document.getElementById('bank-amount').value);
-    if (!isNaN(newBank) && newBank >= 100) {
-        bank = newBank;
-        updateUI();
-    } else {
-        messageEl.innerText = 'Invalid bank amount!';
-    }
-});
+function showWelcomeScreen() {
+    // Reset welcome screen values
+    welcomeBankInput.value = 10000;
+    welcomeDecksInput.value = 6;
+    
+    // Show overlay
+    welcomeOverlay.classList.remove('hidden');
+}
 
-setDecksButton.addEventListener('click', () => {
-    const newDeckCount = parseInt(document.getElementById('deck-count').value);
-    if (!isNaN(newDeckCount) && newDeckCount>=1 && newDeckCount<=8){
-        numDecks = newDeckCount;
-        deck = buildDeck();
-        shuffle(deck);
-        runningCount = 0;
-        messageEl.innerText = `Decks set to ${numDecks}. Shoe reshuffled.`;
-        updateUI();
-    } else {
-        messageEl.innerText = 'Invalid deck count!';
+function checkGameOver() {
+    if (bank <= 0) {
+        messageEl.innerText = 'Game Over! You ran out of money. Starting new game...';
+        setTimeout(() => {
+            showWelcomeScreen();
+        }, 2000);
+        return true;
     }
+    return false;
+}
+
+restartButton.addEventListener('click', () => {
+    showWelcomeScreen();
 });
 
 dealButton.addEventListener('click', deal);
@@ -276,6 +304,11 @@ function updateUI() {
             recommendedBetEl.innerHTML = `Recommended Bet: $${recommendedAmount}<br><small>Edge: ${(advantage * 100).toFixed(2)}% | Kelly: ${kellyPercent}% | Betting: ${betPercent}%</small>`;
         } else {
             recommendedBetEl.innerHTML = `Recommended Bet: $${recommendedAmount}<br><small>No advantage - minimum bet</small>`;
+        }
+        
+        // Check for game over
+        if (checkGameOver()) {
+            return;
         }
     } else {
         recommendedBetEl.innerText = '';
@@ -575,7 +608,12 @@ async function nextHand() {
     updateUI();
 }
 
-// Initialize deck
-deck = buildDeck();
-shuffle(deck);
-updateUI(); 
+// Initialize game with welcome screen
+document.addEventListener('DOMContentLoaded', () => {
+    // Show welcome screen on page load
+    showWelcomeScreen();
+    
+    // Initialize deck but don't update UI until game starts
+    deck = buildDeck();
+    shuffle(deck);
+}); 

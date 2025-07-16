@@ -9,6 +9,35 @@
     <link rel="stylesheet" href="https://selfthinker.github.io/CSS-Playing-Cards/cards.css">
 </head>
 <body>
+    <!-- Welcome Overlay -->
+    <div id="welcome-overlay">
+        <div id="welcome-content">
+            <h1>🃏 Blackjack Card Counting Trainer</h1>
+            <p>Configure your game settings to begin</p>
+            
+            <div id="welcome-settings">
+                <div class="setting-group">
+                    <label for="welcome-bank">Starting Bank: $</label>
+                    <input id="welcome-bank" type="number" min="100" value="10000">
+                </div>
+                
+                <div class="setting-group">
+                    <label for="welcome-decks">Number of Decks:</label>
+                    <input id="welcome-decks" type="number" min="1" max="8" value="6">
+                </div>
+            </div>
+            
+            <button id="start-game" class="welcome-button">Start Playing</button>
+            
+            <div id="welcome-info">
+                <small>
+                    <strong>Tips:</strong> Green buttons show optimal basic strategy. 
+                    Follow Kelly betting recommendations for best results.
+                </small>
+            </div>
+        </div>
+    </div>
+
     <div id="game">
         <div id="count-info">
             Running Count: <span id="running-count">0</span><br>
@@ -44,24 +73,11 @@
                 <input id="bet-amount" type="number" min="1" value="500">
                 <button id="deal">Deal</button>
             </div>
-            <div>
-                <label>Set Bank: $</label>
-                <input id="bank-amount" type="number" min="100" value="500">
-                <button id="set-bank">Set</button>
-            </div>
-            <div>
-                <label>Decks: </label>
-                <input id="deck-count" type="number" min="1" max="8" value="6" style="width:50px;">
-                <button id="set-decks">Set Decks</button>
-            </div>
             <div id="recommended-bet"></div>
-            <div id="strategy-legend">
-                <small><span style="color: #00ff00;">✓ Green</span>: Basic Strategy Recommended | <span style="color: #ff6600;">⚠ Orange</span>: Not Recommended</small>
-            </div>
             <button id="restart">Restart</button>
         </div>
         
-        <div id="bank-display">Bank: $<span id="bank">500</span></div>
+        <div id="bank-display">Bank: $<span id="bank">10000</span></div>
     </div>
     <script src="script.js"></script>
 </body>
