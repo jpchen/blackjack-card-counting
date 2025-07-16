@@ -266,7 +266,17 @@ function updateUI() {
     splitButton.disabled = gameState !== 'playing' || playerHands[currentHandIndex].hand.length !== 2 || playerHands[currentHandIndex].hand[0].rank !== playerHands[currentHandIndex].hand[1].rank || bank < playerHands[currentHandIndex].bet;
 
     if (gameState === 'betting') {
-        recommendedBetEl.innerText = `Recommended Bet: $${getRecommendedBet()}`;
+        const tc = parseFloat(trueCountEl.innerText);
+        const advantage = Math.max(0, (tc - 1) * 0.005);
+        const recommendedAmount = getRecommendedBet();
+        
+        if (advantage > 0) {
+            const kellyPercent = ((advantage / 1.35) * 100).toFixed(2);
+            const betPercent = ((recommendedAmount / bank) * 100).toFixed(1);
+            recommendedBetEl.innerHTML = `Recommended Bet: $${recommendedAmount}<br><small>Edge: ${(advantage * 100).toFixed(2)}% | Kelly: ${kellyPercent}% | Betting: ${betPercent}%</small>`;
+        } else {
+            recommendedBetEl.innerHTML = `Recommended Bet: $${recommendedAmount}<br><small>No advantage - minimum bet</small>`;
+        }
     } else {
         recommendedBetEl.innerText = '';
     }
@@ -274,12 +284,37 @@ function updateUI() {
 
 function getRecommendedBet() {
     const tc = parseFloat(trueCountEl.innerText);
-    const advantage = Math.max(0, tc - 1) * 0.005; // 0.5% per true count above 1
-    const variance = 1.3;
-    const kellyFraction = (advantage / variance) / 2; // Half Kelly for conservatism
-    let recommended = Math.floor(bank * kellyFraction);
-    recommended = Math.max(1, recommended); // Minimum bet $1
+    
+    // Player advantage calculation: roughly 0.5% per true count above 1
+    const advantage = Math.max(0, (tc - 1) * 0.005);
+    
+    // If no advantage, bet minimum
+    if (advantage <= 0) {
+        return Math.max(1, Math.floor(bank * 0.01)); // 1% of bankroll when no advantage
+    }
+    
+    // Blackjack specific Kelly Criterion
+    // For blackjack: Kelly = (advantage) / (variance)
+    // Variance for blackjack is approximately 1.35
+    const variance = 1.35;
+    const kellyFraction = advantage / variance;
+    
+    // Apply Kelly but cap at reasonable percentages
+    const maxBetPercent = 0.25; // Never bet more than 25% of bankroll
+    const cappedKelly = Math.min(kellyFraction, maxBetPercent);
+    
+    let recommended = Math.floor(bank * cappedKelly);
+    
+    // Ensure reasonable betting range
+    const minBet = Math.max(1, Math.floor(bank * 0.01)); // At least 1% of bankroll
+    const maxBet = Math.floor(bank * 0.25); // At most 25% of bankroll
+    
+    recommended = Math.max(minBet, recommended);
+    recommended = Math.min(maxBet, recommended);
+    
+    // Never bet more than we have
     if (recommended > bank) recommended = bank;
+    
     return recommended;
 }
 
