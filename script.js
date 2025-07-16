@@ -24,6 +24,18 @@ const trueCountEl = document.getElementById('true-count');
 const playerScoreEl = document.getElementById('player-score');
 const dealerScoreEl = document.getElementById('dealer-score');
 const currentBetEl = document.getElementById('current-bet');
+const setBankButton = document.getElementById('set-bank');
+const recommendedBetEl = document.getElementById('recommended-bet');
+
+setBankButton.addEventListener('click', () => {
+    const newBank = parseInt(document.getElementById('bank-amount').value);
+    if (!isNaN(newBank) && newBank >= 100) {
+        bank = newBank;
+        updateUI();
+    } else {
+        messageEl.innerText = 'Invalid bank amount!';
+    }
+});
 
 dealButton.addEventListener('click', deal);
 hitButton.addEventListener('click', hit);
@@ -153,6 +165,23 @@ function updateUI() {
     } else {
         dealerScoreEl.innerText = calculateHandValue(dealerHand);
     }
+
+    if (gameState === 'betting') {
+        recommendedBetEl.innerText = `Recommended Bet: $${getRecommendedBet()}`;
+    } else {
+        recommendedBetEl.innerText = '';
+    }
+}
+
+function getRecommendedBet() {
+    const tc = parseFloat(trueCountEl.innerText);
+    const advantage = Math.max(0, tc - 1) * 0.005; // 0.5% per true count above 1
+    const variance = 1.3;
+    const kellyFraction = (advantage / variance) / 2; // Half Kelly for conservatism
+    let recommended = Math.floor(bank * kellyFraction);
+    recommended = Math.max(1, recommended); // Minimum bet $1
+    if (recommended > bank) recommended = bank;
+    return recommended;
 }
 
 function deal() {
