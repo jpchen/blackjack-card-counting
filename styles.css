@@ -3,102 +3,94 @@ body {
     background-color: #111;
     color: #fff;
     font-family: sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     margin: 0;
+    padding: 10px;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 #game {
     position: relative;
-    width: 800px;
-    height: 600px;
+    width: 100%;
+    max-width: 1200px;
+    min-height: 100vh;
+    margin: 0 auto;
+    display: grid;
+    grid-template-areas: 
+        "count deck deck"
+        "dealer dealer dealer"
+        "bet bet controls"
+        "player player controls"
+        "message message controls"
+        "bottom bottom controls";
+    grid-template-columns: 1fr 1fr 200px;
+    grid-template-rows: auto auto auto 1fr auto auto;
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-#dealer-area {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
+#count-info {
+    grid-area: count;
+    font-size: 16px;
+    align-self: start;
 }
 
-#player-area {
-    position: absolute;
-    bottom: 50px;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
-}
-
-#dealer-cards, #player-cards {
-    display: flex;
-    justify-content: center;
-}
-
-.card {
-    width: 80px;
-    height: 120px;
-    background: #000;
-    border: 2px solid #ffd700;
-    border-radius: 8px;
-    margin: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 28px;
-    font-weight: bold;
+#deck-position {
+    grid-area: deck;
+    justify-self: end;
+    width: 90px;
+    height: 130px;
+    z-index: 10;
     position: relative;
 }
 
-.card::before {
-    content: attr(data-rank);
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    font-size: 20px;
-}
-
-.card::after {
-    content: attr(data-suit);
-    position: absolute;
-    font-size: 40px;
-}
-
-.red {
-    color: red;
-}
-
-#controls {
-    position: absolute;
-    right: 50px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-button {
-    background: #222;
-    color: #fff;
-    border: 2px solid #ffd700;
-    padding: 10px 20px;
-    font-size: 18px;
-    cursor: pointer;
-}
-
-button:disabled {
-    opacity: 0.5;
+#dealer-area {
+    grid-area: dealer;
+    text-align: center;
+    justify-self: center;
 }
 
 #bet-display {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -100%);
+    grid-area: bet;
     font-size: 24px;
+    text-align: center;
+    align-self: center;
+}
+
+#controls {
+    grid-area: controls;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-self: center;
+    min-width: 150px;
+}
+
+#player-area {
+    grid-area: player;
+    text-align: center;
+    justify-self: center;
+}
+
+#message {
+    grid-area: message;
+    font-size: 18px;
+    background: rgba(0,0,0,0.7);
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    justify-self: center;
+    max-width: 600px;
+}
+
+#bet-section {
+    grid-area: bottom;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
 }
 
 #bank-display {
@@ -108,41 +100,142 @@ button:disabled {
     font-size: 20px;
 }
 
-#count-info {
-    position: absolute;
-    top: 10px;
-    left: 20px;
+#dealer-cards, #player-cards {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0;
+    max-width: 100%;
+}
+
+.card {
+    flex-shrink: 0;
+    max-width: 80px;
+    height: auto;
+}
+
+button {
+    background: #222;
+    color: #fff;
+    border: 2px solid #ffd700;
+    padding: 12px 20px;
     font-size: 16px;
-}
-
-#message {
-    position: absolute;
-    bottom: 100px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 20px;
-    background: rgba(0,0,0,0.7);
-    padding: 10px;
+    cursor: pointer;
     border-radius: 5px;
-    text-align: center;
+    min-width: 120px;
 }
 
-#bet-section {
-    position: absolute;
-    bottom: 10px;
-    left: 20px;
+button:disabled {
+    opacity: 0.5;
+}
+
+button:hover:not(:disabled) {
+    background: #333;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
 
 #bet-section input {
     width: 80px;
-    margin-right: 10px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+#bet-section label {
+    font-size: 14px;
+    margin-right: 5px;
 }
 
 #recommended-bet {
     font-size: 16px;
     color: #ffd700;
-    display: block;
-    margin-top: 10px;
+    text-align: center;
+    margin: 5px 0;
+}
+
+/* Mobile responsive layout */
+@media (max-width: 768px) {
+    #game {
+        grid-template-areas: 
+            "count deck"
+            "dealer dealer"
+            "bet bet"
+            "player player"
+            "controls controls"
+            "message message"
+            "bottom bottom";
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto auto auto auto auto;
+        gap: 15px;
+        padding: 10px;
+    }
+    
+    #controls {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    #controls button {
+        flex: 1;
+        min-width: 100px;
+        max-width: 150px;
+    }
+    
+    #bet-section {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    #bet-section > div {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .card {
+        max-width: 60px;
+    }
+    
+    #deck-position {
+        width: 70px;
+        height: 100px;
+    }
+    
+    #deck-position::before,
+    #deck-position::after {
+        width: 60px;
+        height: 90px;
+    }
+}
+
+@media (max-width: 480px) {
+    #game {
+        padding: 5px;
+        gap: 10px;
+    }
+    
+    .card {
+        max-width: 50px;
+    }
+    
+    #controls button {
+        padding: 10px 15px;
+        font-size: 14px;
+        min-width: 80px;
+    }
+    
+    #bet-display {
+        font-size: 20px;
+    }
+    
+    #message {
+        font-size: 16px;
+    }
 } 
 
 /* Custom card back design inspired by David Blaine cards */
@@ -184,16 +277,6 @@ button:disabled {
     border: 1px solid #ffd700;
 }
 
-/* Deck position for dealing animation - styled as card shoe */
-#deck-position {
-    position: absolute;
-    top: 20px;
-    right: 50px;
-    width: 90px;
-    height: 130px;
-    z-index: 10;
-}
-
 /* Create visual card shoe with stacked cards */
 #deck-position::before {
     content: '';
@@ -230,26 +313,6 @@ button:disabled {
     z-index: -1;
 }
 
-/* Card dealing animation */
-@keyframes dealCard {
-    0% {
-        transform: translate(0, 0) scale(0.8);
-        opacity: 0.8;
-    }
-    50% {
-        transform: translate(var(--deal-x), var(--deal-y)) scale(0.9);
-        opacity: 0.9;
-    }
-    100% {
-        transform: translate(0, 0) scale(1);
-        opacity: 1;
-    }
-}
-
-.card.dealing {
-    animation: dealCard 0.8s ease-out;
-}
-
 /* Card flip animation */
 @keyframes flipCard {
     0% {
@@ -272,20 +335,4 @@ button:disabled {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(255, 215, 0, 0.3);
     transition: all 0.3s ease;
-}
-
-/* Card slide-in animation */
-@keyframes slideIn {
-    0% {
-        transform: translateX(-100px);
-        opacity: 0;
-    }
-    100% {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-.card.sliding {
-    animation: slideIn 0.5s ease-out;
 } 
