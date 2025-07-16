@@ -120,6 +120,21 @@ body {
     line-height: 1.4;
 }
 
+#welcome-info a {
+    color: #ffd700;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+}
+
+#welcome-info a:hover {
+    color: #ffed4e;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+#welcome-info a:visited {
+    color: #e6c200;
+}
+
 /* Hide overlay when game is active */
 #welcome-overlay.hidden {
     display: none;
