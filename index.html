@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Card Counting</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game">
+        <div id="dealer-area">
+            <h2>Dealer <span id="dealer-score"></span></h2>
+            <div id="dealer-cards"></div>
+        </div>
+        <div id="bet-display">Bet $<span id="current-bet">0</span></div>
+        <div id="controls">
+            <button id="stand" disabled>STAND</button>
+            <button id="hit" disabled>HIT</button>
+            <button id="double" disabled>DOUBLE</button>
+            <button id="split" disabled>SPLIT</button>
+        </div>
+        <div id="player-area">
+            <h2>Player <span id="player-score"></span></h2>
+            <div id="player-cards"></div>
+        </div>
+        <div id="bank-display">Bank $<span id="bank">500</span></div>
+        <div id="count-info">
+            Running Count: <span id="running-count">0</span>
+            True Count: <span id="true-count">0</span>
+        </div>
+        <div id="message"></div>
+        <div id="bet-section">
+            <label>Bet Amount: $</label>
+            <input id="bet-amount" type="number" min="1" value="500">
+            <button id="deal">Deal</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
