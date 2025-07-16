@@ -201,13 +201,14 @@ async function dealCardWithAnimation(hand, targetElement, isDealer = false, visi
     const gameRect = gameElement.getBoundingClientRect();
     const targetRect = targetElement.getBoundingClientRect();
     
-    // Create card at deck position
-    const cardEl = visible ? createCardElement(card) : createHiddenCard();
+    // Create card starting as back (face down)
+    const cardEl = createHiddenCard(); // Always start as back
     cardEl.style.position = 'absolute';
     cardEl.style.left = `${deckRect.left - gameRect.left}px`;
     cardEl.style.top = `${deckRect.top - gameRect.top}px`;
     cardEl.style.zIndex = '1000';
     cardEl.style.transform = 'scale(0.8)';
+    cardEl.style.transition = 'all 0.4s ease-out';
     
     gameElement.appendChild(cardEl);
     
@@ -217,24 +218,37 @@ async function dealCardWithAnimation(hand, targetElement, isDealer = false, visi
     
     // Animate to final position
     setTimeout(() => {
-        cardEl.style.transition = 'all 0.8s ease-out';
         cardEl.style.left = `${finalLeft}px`;
         cardEl.style.top = `${finalTop}px`;
         cardEl.style.transform = 'scale(1)';
     }, 50);
     
-    // Wait for animation to complete, then move to target element
-    await new Promise(resolve => setTimeout(resolve, 850));
+    // Wait for movement animation to complete
+    await new Promise(resolve => setTimeout(resolve, 450));
     
     // Remove from game element and add to target
     gameElement.removeChild(cardEl);
-    cardEl.style.position = 'static';
-    cardEl.style.left = 'auto';
-    cardEl.style.top = 'auto';
-    cardEl.style.zIndex = 'auto';
-    cardEl.style.transition = 'none';
-    cardEl.style.transform = 'none';
-    targetElement.appendChild(cardEl);
+    
+    // Create final card (visible or hidden based on visible parameter)
+    const finalCardEl = visible ? createCardElement(card) : createHiddenCard();
+    finalCardEl.style.position = 'static';
+    finalCardEl.style.left = 'auto';
+    finalCardEl.style.top = 'auto';
+    finalCardEl.style.zIndex = 'auto';
+    finalCardEl.style.transition = 'none';
+    finalCardEl.style.transform = 'none';
+    
+    // Add flip animation if revealing the card
+    if (visible) {
+        finalCardEl.style.opacity = '0';
+        targetElement.appendChild(finalCardEl);
+        setTimeout(() => {
+            finalCardEl.style.transition = 'opacity 0.2s ease-in';
+            finalCardEl.style.opacity = '1';
+        }, 50);
+    } else {
+        targetElement.appendChild(finalCardEl);
+    }
     
     // Update count after animation
     if (visible) updateCount(card);

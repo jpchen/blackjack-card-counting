@@ -484,13 +484,17 @@ button:hover:not(:disabled) {
     border: 1px solid #ffd700;
 }
 
-/* Create visual card shoe with stacked cards */
+/* Create visual card shoe with stacked cards - exact same styling as .card.back */
+#deck-position {
+    position: relative;
+}
+
 #deck-position::before {
     content: '';
     position: absolute;
     width: 80px;
     height: 120px;
-    background: #000;
+    background: #000 !important;
     background-image: 
         radial-gradient(circle at 25% 25%, #ffd700 1px, transparent 1px),
         radial-gradient(circle at 75% 75%, #ffd700 1px, transparent 1px),
@@ -500,6 +504,7 @@ button:hover:not(:disabled) {
     border: 2px solid #ffd700;
     border-radius: 8px;
     transform: translate(3px, 3px);
+    overflow: hidden;
 }
 
 #deck-position::after {
@@ -507,7 +512,7 @@ button:hover:not(:disabled) {
     position: absolute;
     width: 80px;
     height: 120px;
-    background: #000;
+    background: #000 !important;
     background-image: 
         radial-gradient(circle at 25% 25%, #ffd700 1px, transparent 1px),
         radial-gradient(circle at 75% 75%, #ffd700 1px, transparent 1px),
@@ -518,6 +523,53 @@ button:hover:not(:disabled) {
     border-radius: 8px;
     transform: translate(6px, 6px);
     z-index: -1;
+    overflow: hidden;
+}
+
+/* Add medallion effects to deck cards */
+#deck-position .deck-medallion-1 {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(45deg, #ffd700, #ffed4e, #ffd700);
+    border-radius: 50%;
+    opacity: 0.3;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#deck-position .deck-medallion-2 {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: linear-gradient(45deg, transparent 30%, #ffd700 50%, transparent 70%);
+    border: 1px solid #ffd700;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Faster card dealing animation */
+@keyframes dealCardAnimation {
+    0% {
+        opacity: 1;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.card.dealing {
+    animation: dealCardAnimation 0.4s ease-out;
 }
 
 /* Card flip animation */
