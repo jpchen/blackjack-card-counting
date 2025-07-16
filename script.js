@@ -2,7 +2,11 @@
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const suits = ['♥', '♦', '♣', '♠'];
 
-const numDecks = 6;
+// mapping for suits to class names
+const suitClassMap = { '♥': 'hearts', '♦': 'diams', '♣': 'clubs', '♠': 'spades' };
+const rankClassMap = { 'A': 'a', 'J': 'j', 'Q': 'q', 'K': 'k', '10': '10', '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2' };
+
+let numDecks = 6;
 let deck = [];
 let playerHands = [];
 let currentHandIndex = 0;
@@ -25,6 +29,7 @@ const currentBetEl = document.getElementById('current-bet');
 const setBankButton = document.getElementById('set-bank');
 const recommendedBetEl = document.getElementById('recommended-bet');
 const restartButton = document.getElementById('restart');
+const setDecksButton = document.getElementById('set-decks');
 
 restartButton.addEventListener('click', () => {
     bank = 500;
@@ -47,6 +52,20 @@ setBankButton.addEventListener('click', () => {
         updateUI();
     } else {
         messageEl.innerText = 'Invalid bank amount!';
+    }
+});
+
+setDecksButton.addEventListener('click', () => {
+    const newDeckCount = parseInt(document.getElementById('deck-count').value);
+    if (!isNaN(newDeckCount) && newDeckCount>=1 && newDeckCount<=8){
+        numDecks = newDeckCount;
+        deck = buildDeck();
+        shuffle(deck);
+        runningCount = 0;
+        messageEl.innerText = `Decks set to ${numDecks}. Shoe reshuffled.`;
+        updateUI();
+    } else {
+        messageEl.innerText = 'Invalid deck count!';
     }
 });
 
@@ -125,12 +144,91 @@ function drawCard(hand, visible = true) {
     return card;
 }
 
-function createCardElement(card) {
+function createCardElement(card, animated = false) {
     const div = document.createElement('div');
-    div.className = `card ${(['♥', '♦'].includes(card.suit) ? 'red' : '')}`;
-    div.dataset.rank = card.rank;
-    div.dataset.suit = card.suit;
+    div.className = `card rank-${rankClassMap[card.rank]} ${suitClassMap[card.suit]}`;
+    div.innerHTML = `<span class="rank">${card.rank}</span><span class="suit">&${suitClassMap[card.suit]};</span>`;
+    
+    if (animated) {
+        div.classList.add('dealing');
+    }
+    
     return div;
+}
+
+function createHiddenCard() {
+    const div = document.createElement('div');
+    div.className = 'card back';
+    div.innerHTML = '*';
+    return div;
+}
+
+async function dealCardWithAnimation(hand, targetElement, isDealer = false, visible = true) {
+    const card = drawCard(hand, false);
+    
+    // Get positions
+    const deckElement = document.getElementById('deck-position');
+    const gameElement = document.getElementById('game');
+    const deckRect = deckElement.getBoundingClientRect();
+    const gameRect = gameElement.getBoundingClientRect();
+    const targetRect = targetElement.getBoundingClientRect();
+    
+    // Create card at deck position
+    const cardEl = visible ? createCardElement(card) : createHiddenCard();
+    cardEl.style.position = 'absolute';
+    cardEl.style.left = `${deckRect.left - gameRect.left}px`;
+    cardEl.style.top = `${deckRect.top - gameRect.top}px`;
+    cardEl.style.zIndex = '1000';
+    cardEl.style.transform = 'scale(0.8)';
+    
+    gameElement.appendChild(cardEl);
+    
+    // Calculate final position relative to target
+    const finalLeft = targetRect.left - gameRect.left + (targetElement.children.length * 10);
+    const finalTop = targetRect.top - gameRect.top;
+    
+    // Animate to final position
+    setTimeout(() => {
+        cardEl.style.transition = 'all 0.8s ease-out';
+        cardEl.style.left = `${finalLeft}px`;
+        cardEl.style.top = `${finalTop}px`;
+        cardEl.style.transform = 'scale(1)';
+    }, 50);
+    
+    // Wait for animation to complete, then move to target element
+    await new Promise(resolve => setTimeout(resolve, 850));
+    
+    // Remove from game element and add to target
+    gameElement.removeChild(cardEl);
+    cardEl.style.position = 'static';
+    cardEl.style.left = 'auto';
+    cardEl.style.top = 'auto';
+    cardEl.style.zIndex = 'auto';
+    cardEl.style.transition = 'none';
+    cardEl.style.transform = 'none';
+    targetElement.appendChild(cardEl);
+    
+    // Update count after animation
+    if (visible) updateCount(card);
+    
+    return card;
+}
+
+async function flipCard(cardElement, newCard) {
+    return new Promise(resolve => {
+        cardElement.classList.add('flipping');
+        
+        setTimeout(() => {
+            // Change card content at the middle of flip
+            cardElement.className = `card rank-${rankClassMap[newCard.rank]} ${suitClassMap[newCard.suit]}`;
+            cardElement.innerHTML = `<span class="rank">${newCard.rank}</span><span class="suit">&${suitClassMap[newCard.suit]};</span>`;
+        }, 300);
+        
+        setTimeout(() => {
+            cardElement.classList.remove('flipping');
+            resolve();
+        }, 600);
+    });
 }
 
 function renderHands() {
@@ -139,8 +237,8 @@ function renderHands() {
     dealerHand.forEach((card, index) => {
         if (index === 1 && gameState === 'playing') {
             const hiddenCard = document.createElement('div');
-            hiddenCard.className = 'card';
-            hiddenCard.innerText = '';
+            hiddenCard.className = 'card back';
+            hiddenCard.innerHTML = '*';
             dealerCardsEl.appendChild(hiddenCard);
         } else {
             dealerCardsEl.appendChild(createCardElement(card));
@@ -197,16 +295,28 @@ async function deal() {
     dealerHand = [];
     currentHandIndex = 0;
 
-    drawCard(playerHands[0].hand);
-    drawCard(dealerHand);
-    drawCard(playerHands[0].hand);
-    drawCard(dealerHand, false); // hole card, not visible yet
+    const playerCardsEl = document.getElementById('player-cards');
+    const dealerCardsEl = document.getElementById('dealer-cards');
+    playerCardsEl.innerHTML = '';
+    dealerCardsEl.innerHTML = '';
 
+    // Deal cards with animation
+    await dealCardWithAnimation(playerHands[0].hand, playerCardsEl, false, true);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    await dealCardWithAnimation(dealerHand, dealerCardsEl, true, true);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    await dealCardWithAnimation(playerHands[0].hand, playerCardsEl, false, true);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    await dealCardWithAnimation(dealerHand, dealerCardsEl, true, false); // hole card
+    
     gameState = 'playing';
 
     const playerValue = calculateHandValue(playerHands[0].hand);
     if (playerValue === 21) {
-        stand();
+        setTimeout(() => stand(), 500);
         return;
     }
 
@@ -215,15 +325,10 @@ async function deal() {
 
 async function hit() {
     const hand = playerHands[currentHandIndex].hand;
-    const card = drawCard(hand, false);
     const playerCardsEl = document.getElementById('player-cards');
-    const cardEl = createCardElement(card);
-    cardEl.style.opacity = 0;
-    cardEl.style.transition = 'opacity 0.5s';
-    playerCardsEl.appendChild(cardEl);
-    setTimeout(() => { cardEl.style.opacity = 1; }, 10);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    updateCount(card);
+    
+    await dealCardWithAnimation(hand, playerCardsEl, false, true);
+    
     const value = calculateHandValue(hand);
     updateUI();
     if (value > 21) {
@@ -242,23 +347,14 @@ async function doubleDown() {
     if (bank < hand.bet) return;
     bank -= hand.bet;
     hand.bet *= 2;
-    const card = drawCard(hand.hand, false);
+    
     const playerCardsEl = document.getElementById('player-cards');
-    const cardEl = createCardElement(card);
-    cardEl.style.opacity = 0;
-    cardEl.style.transition = 'opacity 0.5s';
-    playerCardsEl.appendChild(cardEl);
-    setTimeout(() => { cardEl.style.opacity = 1; }, 10);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    updateCount(card);
+    await dealCardWithAnimation(hand.hand, playerCardsEl, false, true);
+    
     const value = calculateHandValue(hand.hand);
     updateUI();
     hand.done = true;
-    if (value <= 21) {
-        await nextHand();
-    } else {
-        await nextHand();
-    }
+    await nextHand();
 }
 
 function split() {
@@ -283,33 +379,24 @@ async function nextHand() {
 
     // Dealer turn
     gameState = 'dealerTurn';
-    renderHands(); // Ensure current state with hidden hole
     const dealerCardsEl = document.getElementById('dealer-cards');
-    const hiddenEl = dealerCardsEl.children[1];
+    
+    // Flip hole card with animation
+    const hiddenCardEl = dealerCardsEl.children[1];
     const holeCard = dealerHand[1];
-    const realEl = createCardElement(holeCard);
-    realEl.style.opacity = 0;
-    realEl.style.transition = 'opacity 0.5s';
-    dealerCardsEl.replaceChild(realEl, hiddenEl);
-    setTimeout(() => { realEl.style.opacity = 1; }, 10);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    await flipCard(hiddenCardEl, holeCard);
     updateCount(holeCard);
     updateUI();
+    
     await new Promise(resolve => setTimeout(resolve, 500));
 
     let dealerValue = calculateHandValue(dealerHand);
     while (dealerValue < 17) {
-        const card = drawCard(dealerHand, false);
-        const cardEl = createCardElement(card);
-        cardEl.style.opacity = 0;
-        cardEl.style.transition = 'opacity 0.5s';
-        dealerCardsEl.appendChild(cardEl);
-        setTimeout(() => { cardEl.style.opacity = 1; }, 10);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        updateCount(card);
+        await dealCardWithAnimation(dealerHand, dealerCardsEl, true, true);
+        await new Promise(resolve => setTimeout(resolve, 300));
         dealerValue = calculateHandValue(dealerHand);
         updateUI();
-        await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     // Evaluate results

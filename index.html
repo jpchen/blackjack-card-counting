@@ -6,12 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack Card Counting</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://selfthinker.github.io/CSS-Playing-Cards/cards.css">
 </head>
 <body>
     <div id="game">
+        <div id="deck-position"></div>
         <div id="dealer-area">
             <h2>Dealer</h2>
-            <div id="dealer-cards"></div>
+            <div id="dealer-cards" class="playingCards"></div>
         </div>
         <div id="bet-display">Bet $<span id="current-bet">0</span></div>
         <div id="controls">
@@ -22,7 +24,7 @@
         </div>
         <div id="player-area">
             <h2>Player</h2>
-            <div id="player-cards"></div>
+            <div id="player-cards" class="playingCards"></div>
         </div>
         <div id="bank-display">Bank $<span id="bank">500</span></div>
         <div id="count-info">
@@ -38,6 +40,10 @@
             <label>Set Bank: $</label>
             <input id="bank-amount" type="number" min="100" value="500">
             <button id="set-bank">Set</button>
+            <br>
+            <label>Decks: </label>
+            <input id="deck-count" type="number" min="1" max="8" value="6" style="width:50px;">
+            <button id="set-decks">Set Decks</button>
             <br>
             <span id="recommended-bet"></span>
             <button id="restart">Restart</button>
