@@ -82,6 +82,26 @@
         
         <div id="bank-display">Bank: $<span id="bank">10000</span></div>
     </div>
+
+    <!-- Card Histogram Modal -->
+    <div id="histogram-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Remaining Cards in Shoe</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="histogram-container">
+                    <!-- Histogram will be generated here -->
+                </div>
+                <div id="card-stats">
+                    <div>Cards Remaining: <span id="total-remaining">0</span></div>
+                    <div>Cards Dealt: <span id="cards-dealt">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html> 

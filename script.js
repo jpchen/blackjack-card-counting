@@ -71,6 +71,9 @@ function startNewGame() {
     // Hide overlay and start game
     welcomeOverlay.classList.add('hidden');
     updateUI();
+    
+    // Re-setup histogram listeners after game start
+    setupHistogramListeners();
 }
 
 function showWelcomeScreen() {
@@ -622,6 +625,155 @@ async function nextHand() {
     updateUI();
 }
 
+// Card Histogram Functionality
+function calculateRemainingCards() {
+    const remaining = {};
+    
+    // Initialize counts for all ranks
+    ranks.forEach(rank => {
+        remaining[rank] = numDecks * 4; // 4 suits per deck
+    });
+    
+    // Create full deck to compare against
+    const fullDeck = buildDeck();
+    
+    // Subtract dealt cards
+    const dealtCards = fullDeck.length - deck.length;
+    
+    // Count cards in current hands
+    const currentCards = [];
+    if (dealerHand && Array.isArray(dealerHand)) {
+        currentCards.push(...dealerHand);
+    }
+    if (playerHands && Array.isArray(playerHands)) {
+        playerHands.forEach(hand => {
+            if (hand && Array.isArray(hand)) {
+                currentCards.push(...hand);
+            }
+        });
+    }
+    
+    // Subtract cards currently in play
+    currentCards.forEach(card => {
+        if (remaining[card.rank] > 0) {
+            remaining[card.rank]--;
+        }
+    });
+    
+    // Subtract cards already dealt from deck
+    const originalDeck = buildDeck();
+    const remainingCards = [...deck];
+    
+    // Calculate what's been dealt by comparing original deck size to current
+    const totalDealt = originalDeck.length - deck.length;
+    
+    // Count actual remaining cards in deck
+    const deckCounts = {};
+    ranks.forEach(rank => deckCounts[rank] = 0);
+    
+    deck.forEach(card => {
+        deckCounts[card.rank]++;
+    });
+    
+    return {
+        counts: deckCounts,
+        totalRemaining: deck.length,
+        totalDealt: originalDeck.length - deck.length
+    };
+}
+
+function showHistogram() {
+    console.log('showHistogram called');
+    const modal = document.getElementById('histogram-modal');
+    const container = document.getElementById('histogram-container');
+    const totalRemainingEl = document.getElementById('total-remaining');
+    const cardsDealtEl = document.getElementById('cards-dealt');
+    
+    try {
+        const data = calculateRemainingCards();
+        console.log('Card data calculated:', data);
+    } catch (error) {
+        console.error('Error calculating remaining cards:', error);
+        return;
+    }
+    
+    const data = calculateRemainingCards();
+    
+    // Clear previous histogram
+    container.innerHTML = '';
+    
+    // Update stats
+    totalRemainingEl.textContent = data.totalRemaining;
+    cardsDealtEl.textContent = data.totalDealt;
+    
+    // Find max count for scaling
+    const maxCount = Math.max(...Object.values(data.counts));
+    
+    // Create histogram bars
+    ranks.forEach(rank => {
+        const count = data.counts[rank];
+        const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        
+        const bar = document.createElement('div');
+        bar.className = 'histogram-bar';
+        
+        const label = document.createElement('div');
+        label.className = 'histogram-label';
+        label.textContent = rank;
+        
+        const visual = document.createElement('div');
+        visual.className = 'histogram-visual';
+        visual.style.height = `${Math.max(20, percentage * 1.5)}px`;
+        
+        const countEl = document.createElement('div');
+        countEl.className = 'histogram-count';
+        countEl.textContent = count;
+        
+        visual.appendChild(countEl);
+        bar.appendChild(label);
+        bar.appendChild(visual);
+        container.appendChild(bar);
+    });
+    
+    // Show modal
+    modal.classList.remove('hidden');
+}
+
+function hideHistogram() {
+    const modal = document.getElementById('histogram-modal');
+    modal.classList.add('hidden');
+}
+
+// Setup histogram event listeners
+function setupHistogramListeners() {
+    const deckPosition = document.getElementById('deck-position');
+    const modal = document.getElementById('histogram-modal');
+    const closeBtn = modal.querySelector('.close-btn');
+    
+    if (!deckPosition || !modal || !closeBtn) {
+        console.error('Could not find histogram elements');
+        return;
+    }
+    
+    // Remove any existing listeners to prevent duplicates
+    deckPosition.removeEventListener('click', showHistogram);
+    closeBtn.removeEventListener('click', hideHistogram);
+    
+    // Show histogram when deck is clicked
+    deckPosition.addEventListener('click', showHistogram);
+    console.log('Histogram listeners set up successfully');
+    
+    // Hide histogram when close button is clicked
+    closeBtn.addEventListener('click', hideHistogram);
+    
+    // Hide histogram when clicking outside modal content
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            hideHistogram();
+        }
+    });
+}
+
 // Initialize game with welcome screen
 document.addEventListener('DOMContentLoaded', () => {
     // Show welcome screen on page load
@@ -630,4 +782,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize deck but don't update UI until game starts
     deck = buildDeck();
     shuffle(deck);
+    
+    // Setup histogram listeners
+    setupHistogramListeners();
+    
+    // Hide histogram on Escape key (global listener)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !document.getElementById('histogram-modal').classList.contains('hidden')) {
+            hideHistogram();
+        }
+    });
 }); 
