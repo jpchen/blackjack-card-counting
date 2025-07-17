@@ -165,6 +165,13 @@ body {
     grid-area: count;
     font-size: 16px;
     align-self: start;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #e6e6e6;
+    font-weight: normal;
+    width: fit-content;
 }
 
 #deck-position {
@@ -187,6 +194,15 @@ body {
     font-size: 24px;
     text-align: center;
     align-self: center;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #ffd700;
+    font-weight: bold;
+    width: fit-content;
+    justify-self: center;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
 }
 
 #controls {
@@ -207,12 +223,22 @@ body {
 #message {
     grid-area: message;
     font-size: 18px;
-    background: rgba(0,0,0,0.7);
-    padding: 10px;
-    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 215, 0, 0.5);
+    border-radius: 8px;
+    padding: 12px 16px;
     text-align: center;
     justify-self: center;
-    max-width: 600px;
+    max-width: 500px;
+    color: #ffd700;
+    font-weight: normal;
+    line-height: 1.4;
+    width: fit-content;
+    display: none; /* Hidden by default */
+}
+
+#message:not(:empty) {
+    display: block; /* Show when there's content */
 }
 
 #bet-section {
@@ -228,7 +254,13 @@ body {
     position: absolute;
     bottom: 10px;
     right: 20px;
-    font-size: 20px;
+    font-size: 18px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #e6e6e6;
+    font-weight: normal;
 }
 
 #dealer-cards, #player-cards {
@@ -310,20 +342,41 @@ button:hover:not(:disabled) {
 
 #bet-section input {
     width: 80px;
-    padding: 5px;
-    font-size: 14px;
+    padding: 6px 10px;
+    font-size: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 4px;
+    color: #e6e6e6;
+    font-weight: normal;
+    text-align: center;
+}
+
+#bet-section input:focus {
+    outline: none;
+    border-color: #ffd700;
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
 }
 
 #bet-section label {
-    font-size: 14px;
-    margin-right: 5px;
+    font-size: 16px;
+    margin-right: 8px;
+    color: #e6e6e6;
+    font-weight: normal;
 }
 
 #recommended-bet {
     font-size: 16px;
     color: #ffd700;
     text-align: center;
-    margin: 5px 0;
+    margin: 8px 0;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-weight: normal;
+    width: fit-content;
+    display: inline-block;
 }
 
 /* Mobile responsive layout */
@@ -438,10 +491,25 @@ button:hover:not(:disabled) {
     
     #bet-display {
         font-size: 20px;
+        padding: 10px 12px;
     }
     
     #message {
         font-size: 16px;
+        padding: 10px 12px;
+        max-width: 90vw;
+    }
+    
+    #count-info {
+        font-size: 14px;
+        padding: 8px 10px;
+    }
+    
+    #bank-display {
+        font-size: 16px;
+        padding: 4px 8px;
+        bottom: 5px;
+        right: 10px;
     }
 }
 

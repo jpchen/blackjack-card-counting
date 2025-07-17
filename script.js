@@ -15,6 +15,7 @@ let runningCount = 0;
 let bank = 10000; // Updated default
 let currentBet = 0;
 let gameState = 'betting'; // betting, playing, dealerTurn, ended
+let roundNumber = 0;
 
 const dealButton = document.getElementById('deal');
 const hitButton = document.getElementById('hit');
@@ -61,6 +62,7 @@ function startNewGame() {
     deck = buildDeck();
     shuffle(deck);
     runningCount = 0;
+    roundNumber = 0;
     playerHands = [];
     dealerHand = [];
     currentBet = 0;
@@ -486,6 +488,7 @@ function updateBasicStrategyTooltips() {
 
 async function deal() {
     messageEl.innerText = '';
+    roundNumber++;
     currentBet = parseInt(document.getElementById('bet-amount').value);
     if (isNaN(currentBet) || currentBet <= 0 || currentBet > bank) {
         messageEl.innerText = 'Invalid bet!';
@@ -606,18 +609,20 @@ async function nextHand() {
     let results = [];
     playerHands.forEach((h, index) => {
         const playerValue = calculateHandValue(h.hand);
+        const handLabel = playerHands.length > 1 ? `Round ${roundNumber} Hand ${index + 1}` : `Round ${roundNumber}`;
+        
         if (playerValue > 21) {
-            results.push(`Hand ${index + 1}: Bust! Lost $${h.bet}`);
+            results.push(`${handLabel}: Bust! Lost $${h.bet}`);
         } else if (finalDealerValue > 21 || playerValue > finalDealerValue) {
             const isBlackjack = playerValue === 21 && h.hand.length === 2;
             const payout = isBlackjack ? h.bet * 1.5 : h.bet;
             bank += h.bet + payout;
-            results.push(`Hand ${index + 1}: ${isBlackjack ? 'Blackjack! ' : ''}Won $${payout}`);
+            results.push(`${handLabel}: ${isBlackjack ? 'Blackjack! ' : ''}Won $${payout}`);
         } else if (playerValue === finalDealerValue) {
             bank += h.bet;
-            results.push(`Hand ${index + 1}: Push`);
+            results.push(`${handLabel}: Push`);
         } else {
-            results.push(`Hand ${index + 1}: Lost $${h.bet}`);
+            results.push(`${handLabel}: Lost $${h.bet}`);
         }
     });
     messageEl.innerText = results.join('\n');
