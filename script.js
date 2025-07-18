@@ -292,11 +292,40 @@ function renderHands() {
         }
     });
 
-    const playerCardsEl = document.getElementById('player-cards');
-    playerCardsEl.innerHTML = '';
-    if (playerHands.length > 0) {
-        playerHands[currentHandIndex].hand.forEach(card => {
-            playerCardsEl.appendChild(createCardElement(card));
+    const playerHandsContainer = document.getElementById('player-hands-container');
+    
+    if (playerHands.length <= 1) {
+        // Single hand - use original layout
+        playerHandsContainer.innerHTML = '<div id="player-cards" class="playingCards"></div>';
+        const playerCardsEl = document.getElementById('player-cards');
+        if (playerHands.length > 0) {
+            playerHands[0].hand.forEach(card => {
+                playerCardsEl.appendChild(createCardElement(card));
+            });
+        }
+    } else {
+        // Multiple hands - show all split hands
+        playerHandsContainer.innerHTML = '';
+        playerHands.forEach((hand, index) => {
+            const handContainer = document.createElement('div');
+            handContainer.className = 'player-hand';
+            
+            const handLabel = document.createElement('div');
+            handLabel.className = 'player-hand-label';
+            if (index === currentHandIndex && gameState === 'playing') {
+                handLabel.classList.add('active');
+            }
+            handLabel.textContent = `Hand ${index + 1}`;
+            
+            const handCards = document.createElement('div');
+            handCards.className = 'player-hand-cards playingCards';
+            hand.hand.forEach(card => {
+                handCards.appendChild(createCardElement(card));
+            });
+            
+            handContainer.appendChild(handLabel);
+            handContainer.appendChild(handCards);
+            playerHandsContainer.appendChild(handContainer);
         });
     }
 }
@@ -518,6 +547,16 @@ async function deal() {
     
     gameState = 'playing';
 
+    // Check for dealer blackjack first
+    const dealerValue = calculateHandValue(dealerHand);
+    if (dealerValue === 21) {
+        // Dealer has blackjack, resolve immediately
+        setTimeout(async () => {
+            await resolveDealerBlackjack();
+        }, 500);
+        return;
+    }
+
     const playerValue = calculateHandValue(playerHands[0].hand);
     if (playerValue === 21) {
         setTimeout(() => stand(), 500);
@@ -527,11 +566,51 @@ async function deal() {
     updateUI();
 }
 
+async function resolveDealerBlackjack() {
+    // Flip hole card to reveal dealer blackjack
+    gameState = 'dealerTurn';
+    const dealerCardsEl = document.getElementById('dealer-cards');
+    const hiddenCardEl = dealerCardsEl.children[1];
+    const holeCard = dealerHand[1];
+    
+    await flipCard(hiddenCardEl, holeCard);
+    updateCount(holeCard);
+    updateUI();
+    
+    // Evaluate results
+    gameState = 'ended';
+    let results = [];
+    playerHands.forEach((h, index) => {
+        const playerValue = calculateHandValue(h.hand);
+        const handLabel = playerHands.length > 1 ? `Round ${roundNumber} Hand ${index + 1}` : `Round ${roundNumber}`;
+        
+        if (playerValue === 21 && h.hand.length === 2) {
+            // Player also has blackjack - push
+            bank += h.bet;
+            results.push(`${handLabel}: Push (Both Blackjack)`);
+        } else {
+            // Dealer wins with blackjack
+            results.push(`${handLabel}: Dealer Blackjack! Lost $${h.bet}`);
+        }
+    });
+    messageEl.innerText = results.join('\n');
+    gameState = 'betting';
+    updateUI();
+}
+
 async function hit() {
     const hand = playerHands[currentHandIndex].hand;
-    const playerCardsEl = document.getElementById('player-cards');
+    let targetElement;
     
-    await dealCardWithAnimation(hand, playerCardsEl, false, true);
+    if (playerHands.length <= 1) {
+        targetElement = document.getElementById('player-cards');
+    } else {
+        // For split hands, find the correct hand container
+        const handContainers = document.querySelectorAll('.player-hand-cards');
+        targetElement = handContainers[currentHandIndex];
+    }
+    
+    await dealCardWithAnimation(hand, targetElement, false, true);
     
     const value = calculateHandValue(hand);
     updateUI();
@@ -552,8 +631,16 @@ async function doubleDown() {
     bank -= hand.bet;
     hand.bet *= 2;
     
-    const playerCardsEl = document.getElementById('player-cards');
-    await dealCardWithAnimation(hand.hand, playerCardsEl, false, true);
+    let targetElement;
+    if (playerHands.length <= 1) {
+        targetElement = document.getElementById('player-cards');
+    } else {
+        // For split hands, find the correct hand container
+        const handContainers = document.querySelectorAll('.player-hand-cards');
+        targetElement = handContainers[currentHandIndex];
+    }
+    
+    await dealCardWithAnimation(hand.hand, targetElement, false, true);
     
     const value = calculateHandValue(hand.hand);
     updateUI();
@@ -581,6 +668,9 @@ async function nextHand() {
         return;
     }
 
+    // Check if all player hands are busted
+    const allPlayerHandsBusted = playerHands.every(hand => calculateHandValue(hand.hand) > 21);
+
     // Dealer turn
     gameState = 'dealerTurn';
     const dealerCardsEl = document.getElementById('dealer-cards');
@@ -596,11 +686,15 @@ async function nextHand() {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     let dealerValue = calculateHandValue(dealerHand);
-    while (dealerValue < 17) {
-        await dealCardWithAnimation(dealerHand, dealerCardsEl, true, true);
-        await new Promise(resolve => setTimeout(resolve, 300));
-        dealerValue = calculateHandValue(dealerHand);
-        updateUI();
+    
+    // Only draw more cards if not all player hands are busted
+    if (!allPlayerHandsBusted) {
+        while (dealerValue < 17) {
+            await dealCardWithAnimation(dealerHand, dealerCardsEl, true, true);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            dealerValue = calculateHandValue(dealerHand);
+            updateUI();
+        }
     }
 
     // Evaluate results
